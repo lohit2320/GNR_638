@@ -3,6 +3,9 @@
 #include <vector>
 #include <random>
 #include <cassert>
+#include <stdexcept>
+#include <iostream>
+#include <utility>
 
 template<typename T>
 class Tensor{
@@ -10,12 +13,12 @@ private:
     std::vector<T> data;
 public:
     int num_dims = 0;
-    int dims[4] = {0, 0, 0, 0};
+    std::vector<int> dims;
 
     Tensor() = default;
-    Tensor(int num_dims, int const* dims);
+    Tensor(int num_dims, std::vector<int> dims);
     Tensor(const Tensor<T> &other);
-    void view(int new_num_dims, int* new_dims);
+    void view(int new_num_dims, std::vector<int> new_dims);
     void zero();
 
     T get(int i) const; // 1d tensor
@@ -30,13 +33,13 @@ public:
     void add(int i, T value);
     void add(int i, int j, int k, int l, T value);
 
-    Tensor<T> matmul(Tensor<T> &other);
+    Tensor<T> matmul(const Tensor<T> &other);
     Tensor<T> transpose();
     Tensor<T> relu();
     Tensor<T> softmax();
     Tensor<T> sigmoid();
 
-    Tensor<T> convolve2D(Tensor<T> &kernel, int stride=1, int padding=0, Tensor<T> bias = Tensor<T>());
+    Tensor<T> convolve2D(Tensor<T> &kernels, int stride, int padding, Tensor<T> bias);
     void dropout(std::default_random_engine generator, std::uniform_real_distribution<> distribution, double p);
 
     Tensor<T> sigmoid_derivative();
@@ -49,10 +52,9 @@ public:
     Tensor<T> operator*(T scalar); // scalar multiplication
     Tensor<T> operator/(T scalar); // scalar division
 
-    Tensor<T>& operator-=(const Tensor<T>&difference);
+    Tensor<T>& operator-=(const Tensor<T>&other);
 
     Tensor<T> col_sum() const;
-    Tensor<T> channel_sum() const;
     void randn(std::default_random_engine generator, std::normal_distribution<double> distribution, double multiplier);
 
     void print() const; // print tensor contents
