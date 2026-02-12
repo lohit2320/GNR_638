@@ -109,7 +109,7 @@ Tensor<T> Tensor<T>::matmul(const Tensor<T>& other) {
     assert(num_dims == 2 && other.num_dims == 2);
     assert(dims[1] == other.dims[0]);
 
-    int new_dims[] = {dims[0], other.dims[1]};
+    std::vector<int> new_dims = {dims[0], other.dims[1]};
     Tensor<T> product(2, new_dims);
     for (int i=0; i<dims[0]; i++) {
         for (int j=0; j<other.dims[1]; j++) {
@@ -126,7 +126,7 @@ Tensor<T> Tensor<T>::matmul(const Tensor<T>& other) {
 template <typename T>
 Tensor<T> Tensor<T>::transpose() {
     assert(num_dims == 2);
-    int new_dims[] = {dims[1], dims[0]};
+    std::vector<int> new_dims = {dims[1], dims[0]};
     Tensor<T> result(2, new_dims);
     for (int i=0; i<dims[0]; i++) {
         for (int j=0; j<dims[1]; j++) {
@@ -212,7 +212,7 @@ template <typename T>
 std::string print_vector(std::vector<T> v) {
     std::string ans = "[";
     for (auto elem: v) {
-        ans += to_string(elem) + " ";
+        ans += std::to_string(elem) + " ";
     }
     ans += "]";
     return ans;
@@ -229,7 +229,7 @@ Tensor<T> Tensor<T>::operator+(Tensor<T>& other) {
         }
         return sum;
     }
-    else if (other.num_dims == this->num_dims) {
+    else if (other.dims == this->dims) {
         Tensor<T> sum(num_dims,other.dims);
         for (int i=0; i <data.size(); i++) {
             sum.data[i] = data[i] + other.data[i];
@@ -372,7 +372,7 @@ Tensor<T> Tensor<T>::convolve2D(Tensor<T> &kernels, int stride, int padding, Ten
                                     continue;
                                 }
                                 T a = get(i,m,x,y);
-                                T b = get(j,m, n, o);
+                                T b = kernels.get(j,m, n, o);
                                 total += a * b;
                             }
                         }
