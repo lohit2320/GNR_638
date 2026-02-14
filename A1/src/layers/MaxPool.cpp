@@ -100,12 +100,3 @@ Tensor<double> MaxPool::backprop(Tensor<double> chainGradient, double learning_r
     }
     return grad_input;
 }
-
-
-void MaxPool::load(FILE *file_model) {
-
-}
-
-void MaxPool::save(FILE *file_model) {
-
-}

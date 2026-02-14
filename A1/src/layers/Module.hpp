@@ -17,8 +17,5 @@ public:
     virtual void load(FILE* file_model) = 0;
     virtual void save(FILE* file_model) = 0;
 
-    virtual void load(FILE *file_model) = 0;
-    virtual void save(FILE *file_model) = 0;
-
     virtual ~Module() = default;
 };
