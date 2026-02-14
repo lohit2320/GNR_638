@@ -1,61 +1,70 @@
-#pragma once
+#ifndef TENSOR_HPP
+#define TENSOR_HPP
 
 #include <vector>
-#include <random>
-#include <cassert>
-#include <stdexcept>
+#include <string>
 #include <iostream>
-#include <utility>
+#include <random>
 
 template<typename T>
-class Tensor{
-private:
-    std::vector<T> data;
+class Tensor {
 public:
-    int num_dims = 0;
+    std::vector<T> data; // Made public for easier binding access, or use get_data()
     std::vector<int> dims;
+    int num_dims;
 
-    Tensor() = default;
+    // Constructors
+    Tensor() : num_dims(0) {}
     Tensor(int num_dims, std::vector<int> dims);
     Tensor(const Tensor<T> &other);
-    void view(int new_num_dims, std::vector<int> new_dims);
+
+    // Utilities
     void zero();
+    void view(int new_num_dims, std::vector<int> new_dims);
+    void print() const;
+    std::vector<T> get_data() const; // <--- The new getter
+    T sum() const;
 
-    T get(int i) const; // 1d tensor
-    T get(int i, int j) const; // 2d tensor
-    T get(int i, int j, int k) const; // 3d tensor
-    T get(int i, int j, int k, int l) const; // 4d tensor
+    // Element Access
+    T get(int i) const;
+    T get(int i, int j) const;
+    T get(int i, int j, int k) const;
+    T get(int i, int j, int k, int l) const;
 
-    void set(int i, T value); // 1d tensor
-    void set(int i, int j, T value); // 2d tensor
-    void set(int i, int j, int k, T value); // 3d tensor
-    void set(int i, int j, int k, int l, T value); // 4d tensor
+    void set(int i, T value);
+    void set(int i, int j, T value);
+    void set(int i, int j, int k, T value);
+    void set(int i, int j, int k, int l, T value);
+
+    // Gradient Accumulation Helpers
     void add(int i, T value);
     void add(int i, int j, int k, int l, T value);
 
-    Tensor<T> matmul(const Tensor<T> &other);
+    // Operations
+    Tensor<T> matmul(const Tensor<T>& other);
     Tensor<T> transpose();
-    Tensor<T> relu();
-    Tensor<T> softmax();
-    Tensor<T> sigmoid();
-
+    Tensor<T> col_sum() const;
+    
+    // Convolutions (Make sure this matches your .cpp name!)
     Tensor<T> convolve2D(Tensor<T> &kernels, int stride, int padding, Tensor<T> bias);
+
+    // Activations
+    Tensor<T> relu();
+    Tensor<T> relu_derivative();
+    Tensor<T> sigmoid();
+    Tensor<T> sigmoid_derivative();
+    Tensor<T> softmax();
+
+    // Random
+    void randn(std::default_random_engine generator, std::normal_distribution<double> distribution, double multiplier);
     void dropout(std::default_random_engine generator, std::uniform_real_distribution<> distribution, double p);
 
-    Tensor<T> sigmoid_derivative();
-    Tensor<T> relu_derivative();
-
-    T sum() const; // sum of all elements
-
-    Tensor<T> operator+(Tensor<T> &other); // element-wise addition
-    Tensor<T> operator*(Tensor<T> &other); // element-wise multiplication
-    Tensor<T> operator*(T scalar); // scalar multiplication
-    Tensor<T> operator/(T scalar); // scalar division
-
-    Tensor<T>& operator-=(const Tensor<T>&other);
-
-    Tensor<T> col_sum() const;
-    void randn(std::default_random_engine generator, std::normal_distribution<double> distribution, double multiplier);
-
-    void print() const; // print tensor contents
+    // Operators
+    Tensor<T> operator+(const Tensor<T>& other) const;
+    Tensor<T> operator*(const Tensor<T> &other) const; // Element-wise
+    Tensor<T> operator*(T scalar) const;
+    Tensor<T> operator/(T scalar) const;
+    Tensor<T>& operator-=(const Tensor<T> &other);
 };
+
+#endif // TENSOR_HPP

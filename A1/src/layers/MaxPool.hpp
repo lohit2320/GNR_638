@@ -2,23 +2,30 @@
 #define MAXPOOL_HPP
 
 #include "Module.hpp"
+#include "../utilities/Tensor.hpp"
+#include <cstdio> 
 
 class MaxPool : public Module {
 private:
-    Tensor<double> output_;
-    Tensor<double> input_;
-    Tensor<int> indexes; // Stores which pixel won (for backprop)
-    int stride_, size_;
+    int stride_;
+    int size_;
+    
+    // We MUST store these as members so we can return references to them
+    Tensor<double> input_cache_;
+    Tensor<double> output_; 
+    Tensor<double> indexes_; // Stores max indices
 
 public:
-    
-    explicit MaxPool(int size, int stride);
+    MaxPool(int size, int stride);
 
-    Tensor<double> &forward(Tensor<double> &input) override;
+    // Return reference to match Module.hpp
+    Tensor<double>& forward(Tensor<double>& input) override;
+    
+    // Backprop usually returns by value (new tensor), which is fine
     Tensor<double> backprop(Tensor<double> chainGradient, double learning_rate) override;
 
-    void load(FILE *file_model) override;
-    void save(FILE *file_model) override;
+    void load(FILE *file_model) override {}
+    void save(FILE *file_model) override {}
 };
 
-#endif 
+#endif

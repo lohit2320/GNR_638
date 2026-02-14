@@ -1,45 +1,39 @@
 from setuptools import setup, Extension
 import pybind11
-import os
+import sys
 
-# Define the C++ source files
-# We list them explicitly to ensure the compiler finds them
-cpp_sources = [
-    # Utilities
-    "src/utilities/bindings.cpp",
-    "src/utilities/Tensor.cpp",
-    
-    # Layers (Current)
-    "src/layers/ReLU.cpp",
-    "src/layers/Sigmoid.cpp",
-    "src/layers/MaxPool.cpp",
-    "src/layers/SoftmaxClassifier.cpp",
-    "src/layers/LinearLRScheduler.cpp",
-    "src/layers/NetworkModel.cpp",
-    
-    # Layers (Future - Uncomment when you create these files)
-    # "src/layers/FullyConnected.cpp",
-    # "src/layers/Conv2D.cpp",
-]
+# Define the C++ extension
+cpp_args = ['-std=c++11', '-O3']
 
 ext_modules = [
     Extension(
-        "my_backend",
-        sources=cpp_sources,
+        'my_backend',
+        sources=[
+            'src/utilities/bindings.cpp',
+            'src/utilities/Tensor.cpp',
+            'src/layers/NetworkModel.cpp',
+            'src/layers/LinearLRScheduler.cpp',
+            'src/layers/ReLU.cpp',
+            'src/layers/Sigmoid.cpp',
+            'src/layers/SoftmaxClassifier.cpp',
+            'src/layers/MaxPool.cpp',
+            'src/layers/FullyConnected.cpp', 
+            'src/layers/conv2d.cpp',
+        ],
         include_dirs=[
             pybind11.get_include(),
-            "src/utilities", # To find Tensor.hpp
-            "src/layers"     # To find Layer headers
+            'src/utilities',
+            'src/layers'
         ],
-        language="c++",
-        extra_compile_args=["-std=c++11", "-O3"], # -O3 for optimization
+        language='c++',
+        extra_compile_args=cpp_args,
     ),
 ]
 
 setup(
-    name="my_backend",
-    version="0.1",
-    author="Your Name",
-    description="A C++ Neural Network Backend",
+    name='my_backend',
+    version='0.1',
+    author='Your Name',
+    description='C++ Backend for Neural Network',
     ext_modules=ext_modules,
 )
