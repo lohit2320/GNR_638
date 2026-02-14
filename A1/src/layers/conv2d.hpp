@@ -17,7 +17,7 @@ public:
 
     Conv2d(int in_channels, int out_channels, int kernel_size, int stride, int padding, int seed = 0);
 
-    // Return reference to match Module interface
+    
     Tensor<double> &forward(Tensor<double> &input) override;
 
     Tensor<double> backprop(Tensor<double> chain_gradient, double learning_rate) override;
@@ -26,4 +26,4 @@ public:
     void save(FILE *file_model) override;
 };
 
-#endif // CONV2D_HPP
+#endif 
