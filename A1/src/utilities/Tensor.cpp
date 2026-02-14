@@ -1,26 +1,25 @@
 #include "Tensor.hpp"
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <numeric>
+#include <algorithm>
+#include <cassert>
+#include <random>
+#include <stdexcept>
 
-template
-class Tensor<int>;
-
-template
-class Tensor<float>;
-
-template
-class Tensor<double>;
-
-
+// --- CONSTRUCTOR FIX ---
 template<typename T>
 Tensor<T>::Tensor(int num_dims, std::vector<int> dims) {
-
     assert(num_dims > 0 && num_dims <= 4);
+    this->num_dims = num_dims;
+    this->dims = dims; // Safe vector copy (Fixed Segfault here)
+
     int size = 1;
     for (int i=0; i<num_dims; i++){
         size *= dims[i];
-        this->dims[i] = dims[i];
     }
-    data.resize(size);
-    this->num_dims = num_dims;
+    this->data.resize(size);
 }
 
 template<typename T>
@@ -183,8 +182,6 @@ Tensor<T> Tensor<T>::softmax() {
     return probabilities;
 }
 
-
-
 template <typename T>
 Tensor<T> Tensor<T>::sigmoid_derivative() {
     Tensor<T> result(num_dims, dims);
@@ -219,7 +216,7 @@ std::string print_vector(std::vector<T> v) {
 }
 
 template <typename T>
-Tensor<T> Tensor<T>::operator+(Tensor<T>& other) {
+Tensor<T> Tensor<T>::operator+(const Tensor<T>& other) const {
     if (other.num_dims == 1 && this->num_dims == 2 && other.data.size() == this->dims[1]) {
         Tensor<T> sum(num_dims,dims);
         for (int i=0; i < this->dims[0]; i++) {
@@ -237,12 +234,12 @@ Tensor<T> Tensor<T>::operator+(Tensor<T>& other) {
         return sum;
     }
     else {
-        throw std::logic_error("Adding Tensor of dim" + print_vector(other.dims) + "to Tensor of dim" + print_vector(this->dims)+ "is not allowed");
+        throw std::logic_error("Adding Tensor mismatch dimensions");
     }
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::operator*(Tensor<T> &other) {
+Tensor<T> Tensor<T>::operator*(const Tensor<T> &other) const {
     assert(dims == other.dims);
     Tensor<T> product(num_dims, dims);
     for (int i = 0; i < data.size(); ++i) {
@@ -252,7 +249,7 @@ Tensor<T> Tensor<T>::operator*(Tensor<T> &other) {
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::operator*(T scalar) {
+Tensor<T> Tensor<T>::operator*(T scalar) const {
     Tensor<T> product(num_dims, dims);
     for (int i = 0; i < data.size(); i++) {
         product.data[i] = data[i] * scalar;
@@ -261,7 +258,7 @@ Tensor<T> Tensor<T>::operator*(T scalar) {
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::operator/(T scalar) {
+Tensor<T> Tensor<T>::operator/(T scalar) const {
     if (scalar == T(0)) {
         throw std::logic_error("Division by zero");
     }
@@ -297,15 +294,17 @@ Tensor<T> Tensor<T>::col_sum() const{
     return sum;
 }
 
-template<>
-void Tensor<double>::randn(std::default_random_engine generator, std::normal_distribution<double> distribution, double multiplier) {
-    for (double & i : data) {
-        i = distribution(generator) * multiplier;
+// --- GENERALIZED RANDN (Replaces double specialization) ---
+template<typename T>
+void Tensor<T>::randn(std::default_random_engine generator, std::normal_distribution<double> distribution, double multiplier) {
+    for (T & i : data) {
+        i = static_cast<T>(distribution(generator) * multiplier);
     }
 }
 
-template<>
-void Tensor<double>::print() const{
+// --- GENERALIZED PRINT (Replaces double specialization) ---
+template<typename T>
+void Tensor<T>::print() const{
     if (num_dims == 2) {
         int rows = dims[0], cols = dims[1];
         std::cout << "Tensor2D (" << rows << ", " << cols << ")\n[";
@@ -313,45 +312,39 @@ void Tensor<double>::print() const{
             if (i != 0) std::cout << " ";
             std::cout << "[";
             for (int j = 0; j < cols; ++j) {
-                if (j == (cols - 1)) {
-                    printf("%.18lf", get(i, j));
-                } else {
-                    printf("%.18lf ", get(i, j));
-                }
-
+                std::cout << get(i, j) << (j == cols - 1 ? "" : " ");
             }
-            if (i == (rows - 1)) {
-                std::cout << "]]\n";
-            } else {
-                std::cout << "]\n";
-            }
+            std::cout << (i == rows - 1 ? "]]\n" : "]\n");
         }
     } else {
-        printf("Tensor%dd (", num_dims);
+        std::cout << "Tensor" << num_dims << "d (";
         for (int i = 0; i < num_dims; ++i) {
-            printf("%d", dims[i]);
-            if (i != (num_dims - 1)) {
-                printf(",");
-            }
+            std::cout << dims[i] << (i != num_dims - 1 ? "," : "");
         }
-        printf(")\n[");
-        for (double j : data) {
-            printf("%lf ", j);
+        std::cout << ")\n[";
+        for (const T &j : data) {
+            std::cout << j << " ";
         }
-        printf("]\n");
+        std::cout << "]\n";
     }
 }
 
 template<typename T>
 void Tensor<T>::dropout(std::default_random_engine generator, std::uniform_real_distribution<> distribution, double p) {
     for (T &i : data) {
-        i = (distribution(generator) < p) / p;
+        if (distribution(generator) < p) i = 0;
+        else i = i / (1.0 - p); 
     }
 }
 
 template<typename T>
+std::vector<T> Tensor<T>::get_data() const {
+    return data;
+}
+
+template<typename T>
 Tensor<T> Tensor<T>::convolve2D(Tensor<T> &kernels, int stride, int padding, Tensor<T> bias) {
-    assert(kernels.dims[1] == dims[1]); // matching number of channels in kernels and input tensor
+    assert(kernels.dims[1] == dims[1]); 
     int new_h = ((dims[2] + 2*padding - kernels.dims[2])/stride ) + 1;
     int new_w = ((dims[3] + 2*padding - kernels.dims[3])/stride ) + 1;
 
@@ -385,5 +378,7 @@ Tensor<T> Tensor<T>::convolve2D(Tensor<T> &kernels, int stride, int padding, Ten
     return result;
 }
 
-
-
+// --- MOVED INSTANTIATION TO BOTTOM (Required for Linking) ---
+template class Tensor<int>;
+template class Tensor<float>;
+template class Tensor<double>;
