@@ -9,7 +9,7 @@
 template<typename T>
 class Tensor {
 public:
-    std::vector<T> data; // Made public for easier binding access, or use get_data()
+    std::vector<T> data; 
     std::vector<int> dims;
     int num_dims;
 
@@ -22,7 +22,7 @@ public:
     void zero();
     void view(int new_num_dims, std::vector<int> new_dims);
     void print() const;
-    std::vector<T> get_data() const; // <--- The new getter
+    std::vector<T> get_data() const; 
     T sum() const;
 
     // Element Access
@@ -45,7 +45,7 @@ public:
     Tensor<T> transpose();
     Tensor<T> col_sum() const;
     
-    // Convolutions (Make sure this matches your .cpp name!)
+    // Convolutions 
     Tensor<T> convolve2D(Tensor<T> &kernels, int stride, int padding, Tensor<T> bias);
 
     // Activations
@@ -61,10 +61,10 @@ public:
 
     // Operators
     Tensor<T> operator+(const Tensor<T>& other) const;
-    Tensor<T> operator*(const Tensor<T> &other) const; // Element-wise
+    Tensor<T> operator*(const Tensor<T> &other) const; 
     Tensor<T> operator*(T scalar) const;
     Tensor<T> operator/(T scalar) const;
     Tensor<T>& operator-=(const Tensor<T> &other);
 };
 
-#endif // TENSOR_HPP
+#endif 

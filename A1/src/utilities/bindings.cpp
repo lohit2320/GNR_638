@@ -1,9 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <cstdio>  // <--- REQUIRED for fopen, fclose
+#include <cstdio>  
 #include <stdexcept>
 
-// Include your headers
 #include "Tensor.hpp"
 #include "../layers/Module.hpp"
 #include "../layers/ReLU.hpp"
@@ -68,12 +67,10 @@ PYBIND11_MODULE(my_backend, m) {
         .def(py::init<double, double>())
         .def_readwrite("learning_rate", &LinearLRScheduler::learning_rate);
 
-    // --- FULLY CONNECTED (With File Wrapper) ---
     py::class_<FullyConnected, Module>(m, "FullyConnected")
         .def(py::init<int, int, int>(), py::arg("input_size"), py::arg("output_size"), py::arg("seed") = 0)
         .def("forward", &FullyConnected::forward, py::return_value_policy::reference)
         .def("backprop", &FullyConnected::backprop)
-        // WRAPPER: Python String -> C++ FILE*
         .def("save", [](FullyConnected& self, const std::string& path) {
             FILE* f = fopen(path.c_str(), "w");
             if (!f) throw std::runtime_error("Could not open file for writing: " + path);
@@ -87,7 +84,7 @@ PYBIND11_MODULE(my_backend, m) {
             fclose(f);
         });
 
-    // --- CONV2D (With File Wrapper) ---
+
     py::class_<Conv2d, Module>(m, "Conv2d")
         .def(py::init<int, int, int, int, int, int>(), 
              py::arg("in_channels"), py::arg("out_channels"), 
@@ -95,7 +92,6 @@ PYBIND11_MODULE(my_backend, m) {
              py::arg("padding"), py::arg("seed") = 0)
         .def("forward", &Conv2d::forward, py::return_value_policy::reference)
         .def("backprop", &Conv2d::backprop)
-        // WRAPPER: Python String -> C++ FILE*
         .def("save", [](Conv2d& self, const std::string& path) {
             FILE* f = fopen(path.c_str(), "w");
             if (!f) throw std::runtime_error("Could not open file for writing: " + path);

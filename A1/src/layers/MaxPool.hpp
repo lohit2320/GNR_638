@@ -10,18 +10,14 @@ private:
     int stride_;
     int size_;
     
-    // We MUST store these as members so we can return references to them
     Tensor<double> input_cache_;
     Tensor<double> output_; 
-    Tensor<double> indexes_; // Stores max indices
+    Tensor<double> indexes_; 
 
 public:
     MaxPool(int size, int stride);
 
-    // Return reference to match Module.hpp
     Tensor<double>& forward(Tensor<double>& input) override;
-    
-    // Backprop usually returns by value (new tensor), which is fine
     Tensor<double> backprop(Tensor<double> chainGradient, double learning_rate) override;
 
     void load(FILE *file_model) override {}

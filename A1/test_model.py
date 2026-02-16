@@ -2,18 +2,19 @@ import os
 import time
 import random
 import cv2
+import numpy as np # Required for the optimized block
 import my_backend  # Your compiled C++ module
 
 # ================= CONFIGURATION =================
-DATASET_PATH = "dataset/data_1"  # Change this to your dataset folder
+DATASET_PATH = "dataset/data_2" 
 WEIGHTS_DIR = "weights"
-BATCH_SIZE = 32      # Small batch size to avoid segfaults with C++ backend
-EPOCHS = 5
+BATCH_SIZE = 32
+EPOCHS = 30
 LEARNING_RATE = 0.005
 TRAIN_SPLIT = 0.8
 IMAGE_SIZE = 32
 CHANNELS = 3
-NUM_CLASSES = 10
+# NUM_CLASSES is now determined dynamically in main()
 # =================================================
 
 def save_weights(conv1, conv2, fc):
@@ -21,7 +22,6 @@ def save_weights(conv1, conv2, fc):
         os.makedirs(WEIGHTS_DIR)
     print(f"\n[Saving] Writing weights to {WEIGHTS_DIR}/...")
     try:
-        # These strings are passed to the C++ wrapper we wrote
         conv1.save(os.path.join(WEIGHTS_DIR, "conv1.txt"))
         conv2.save(os.path.join(WEIGHTS_DIR, "conv2.txt"))
         fc.save(os.path.join(WEIGHTS_DIR, "fc.txt"))
@@ -32,7 +32,16 @@ def save_weights(conv1, conv2, fc):
 class DataLoader:
     def __init__(self, data_dir, batch_size, split='train'):
         self.batch_size = batch_size
+        
+        # 1. Start Timer
+        start_load = time.time()
+        
+        # 2. Detect Classes (Subdirectories)
+        if not os.path.exists(data_dir):
+            raise FileNotFoundError(f"Directory {data_dir} not found.")
+            
         self.classes = sorted([d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))])
+        self.num_classes = len(self.classes)
         self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
         
         self.samples = []
@@ -49,7 +58,12 @@ class DataLoader:
             for f in selected:
                 self.samples.append((os.path.join(cls_dir, f), self.class_to_idx[cls_name]))
         
-        print(f"[{split.upper()}] Loaded {len(self.samples)} images.")
+        # 3. Stop Timer
+        end_load = time.time()
+        self.loading_time = end_load - start_load
+        
+        print(f"[{split.upper()}] Found {self.num_classes} classes: {self.classes}")
+        print(f"[{split.upper()}] Loaded {len(self.samples)} images in {self.loading_time:.4f} seconds.")
 
     def get_batch(self):
         random.shuffle(self.samples)
@@ -66,12 +80,14 @@ class DataLoader:
                 if img is None: continue
                 img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
                 
-                # Normalize and Flatten (Channel-First for your C++ Tensor)
-                # Structure: RRR...GGG...BBB...
-                for c in range(CHANNELS):
-                    for h in range(IMAGE_SIZE):
-                        for w in range(IMAGE_SIZE):
-                            flat_pixels.append(float(img[h, w, c] / 255.0))
+                # --- OPTIMIZED PREPROCESSING (Numpy) ---
+                # 1. Transpose (H, W, C) -> (C, H, W)
+                img = img.transpose(2, 0, 1)
+                
+                # 2. Normalize and flatten
+                # flatten() produces a 1D array, tolist() makes it Python-compatible
+                flat_pixels.extend((img / 255.0).flatten().tolist())
+                # ---------------------------------------
                 
                 labels.append(label)
                 valid_batch_size += 1
@@ -81,32 +97,37 @@ class DataLoader:
 
 def get_argmax(flat_probs, num_classes):
     preds = []
-    # flat_probs is a 1D list of [batch * 10]
+    # flat_probs is a 1D list of [batch * num_classes]
     for i in range(0, len(flat_probs), num_classes):
         chunk = flat_probs[i : i + num_classes]
         preds.append(chunk.index(max(chunk)))
     return preds
 
 def main():
-    print(">>> Initializing C++ Model...")
-    # 1. Architecture
-    # Conv1: 3 in -> 6 out, 5x5 kernel
+    if not os.path.exists(DATASET_PATH):
+        print(f"Error: Dataset not found at {DATASET_PATH}")
+        return
+
+    # 1. Initialize Loader FIRST to get num_classes
+    print(">>> Loading Data...")
+    train_loader = DataLoader(DATASET_PATH, BATCH_SIZE, 'train')
+    NUM_CLASSES = train_loader.num_classes
+    
+    print(f"\n>>> Initializing C++ Model (Classes: {NUM_CLASSES})...")
+    
+    # 2. Architecture
     conv1 = my_backend.Conv2d(3, 6, 5, 1, 0, 42) 
     relu1 = my_backend.ReLU()
     pool1 = my_backend.MaxPool(2, 2)
     
-    # Conv2: 6 in -> 16 out, 3x3 kernel
     conv2 = my_backend.Conv2d(6, 16, 3, 1, 0, 43)
     relu2 = my_backend.ReLU()
     pool2 = my_backend.MaxPool(2, 2)
     
-    # FC: 576 input (16 * 6 * 6) -> 10 output
+    # FC: 576 input (16 * 6 * 6) -> NUM_CLASSES output
     fc = my_backend.FullyConnected(576, NUM_CLASSES, 44)
     loss_fn = my_backend.SoftmaxClassifier()
 
-    # 2. Data
-    train_loader = DataLoader(DATASET_PATH, BATCH_SIZE, 'train')
-    
     # 3. Training Loop
     print(f"\n>>> Starting Training ({EPOCHS} Epochs)")
     for epoch in range(EPOCHS):
@@ -117,7 +138,6 @@ def main():
         
         for flat_pixels, labels, bs in train_loader.get_batch():
             # Create C++ Tensor
-            # Shape: [Batch, Channels, Height, Width]
             t_in = my_backend.Tensor(flat_pixels, [bs, CHANNELS, IMAGE_SIZE, IMAGE_SIZE])
             
             # --- Forward ---
@@ -160,7 +180,4 @@ def main():
     save_weights(conv1, conv2, fc)
 
 if __name__ == "__main__":
-    if not os.path.exists(DATASET_PATH):
-        print(f"Error: Dataset not found at {DATASET_PATH}")
-    else:
-        main()
+    main()

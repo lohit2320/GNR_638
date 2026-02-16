@@ -1,46 +1,31 @@
 import matplotlib.pyplot as plt
-import csv
 
-def main():
-    epochs = []
-    losses = []
-    train_accs = []
-    test_accs = []
+# Data from your terminal output
+epochs = [1, 2, 3, 4, 5]
+train_acc = [52.99, 75.53, 81.66, 86.36, 89.44]
+train_loss = [0.0453, 0.0241, 0.0184, 0.0137, 0.0107]
 
-    try:
-        with open("training_logs.csv", "r") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                epochs.append(int(row['epoch']))
-                losses.append(float(row['train_loss']))
-                train_accs.append(float(row['train_acc']))
-                test_accs.append(float(row['test_acc']))
-    except FileNotFoundError:
-        print("Error: 'training_logs.csv' not found. Run final_submission.py first.")
-        return
+# Create Figure
+fig, ax1 = plt.subplots(figsize=(8, 5))
 
-    # 1. Plot Loss
-    plt.figure()
-    plt.plot(epochs, losses, marker='o', label='Training Loss')
-    plt.title('Training Loss per Epoch')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig('plot_loss.png')
-    print("Saved plot_loss.png")
+# Plot Accuracy (Blue Line)
+color = 'tab:blue'
+ax1.set_xlabel('Epoch')
+ax1.set_ylabel('Training Accuracy (%)', color=color)
+ax1.plot(epochs, train_acc, marker='o', color=color, linewidth=2, label='Accuracy')
+ax1.tick_params(axis='y', labelcolor=color)
+ax1.grid(True, linestyle='--', alpha=0.6)
 
-    # 2. Plot Accuracy
-    plt.figure()
-    plt.plot(epochs, train_accs, marker='o', label='Train Accuracy')
-    plt.plot(epochs, test_accs, marker='s', label='Test Accuracy')
-    plt.title('Model Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy (%)')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig('plot_accuracy.png')
-    print("Saved plot_accuracy.png")
+# Instantiate a second axes that shares the same x-axis
+ax2 = ax1.twinx()  
 
-if __name__ == "__main__":
-    main()
+# Plot Loss (Red Line)
+color = 'tab:red'
+ax2.set_ylabel('Avg Training Loss', color=color)  
+ax2.plot(epochs, train_loss, marker='x', linestyle='--', color=color, linewidth=2, label='Loss')
+ax2.tick_params(axis='y', labelcolor=color)
+
+plt.title('Training Progress: Accuracy vs Loss')
+fig.tight_layout()  
+plt.savefig('accuracy_plot.png', dpi=300)
+print("Plot saved as accuracy_plot.png")

@@ -105,16 +105,33 @@ void Tensor<T>::view(int new_num_dims, std::vector<int> new_dims) {
 
 template <typename T>
 Tensor<T> Tensor<T>::matmul(const Tensor<T>& other) {
+    // Assertions will be removed by -DNDEBUG, but logic remains safe
     assert(num_dims == 2 && other.num_dims == 2);
     assert(dims[1] == other.dims[0]);
 
-    std::vector<int> new_dims = {dims[0], other.dims[1]};
+    int M = dims[0];
+    int K = dims[1];
+    int N = other.dims[1];
+
+    std::vector<int> new_dims = {M, N};
     Tensor<T> product(2, new_dims);
-    for (int i=0; i<dims[0]; i++) {
-        for (int j=0; j<other.dims[1]; j++) {
+
+    // OPTIMIZATION: Transpose 'other' to allow sequential memory access
+    // Copy 'other' into a new tensor and transpose it
+    Tensor<T> other_T = Tensor<T>(other).transpose(); 
+
+    // Now other_T has dims {N, K}
+    // Accessing other_T.get(j, k) is sequential in k
+    
+    for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
             T sum = 0;
-            for (int k=0; k<dims[1]; k++) {
-                sum += get(i, k) * other.get(k, j);
+            // Pointers for raw access speedup (optional, but cleaner)
+            // If you want to stick to safe .get(), use the loop below:
+            for (int k = 0; k < K; k++) {
+                // OLD: get(i, k) * other.get(k, j) <--- other.get jumps memory
+                // NEW: get(i, k) * other_T.get(j, k) <--- both read sequentially!
+                sum += get(i, k) * other_T.get(j, k);
             }
             product.set(i, j, sum);
         }

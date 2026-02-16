@@ -6,9 +6,7 @@
 #include "OutputLayer.hpp"
 #include "../utilities/Tensor.hpp"
 
-/*
- * Applies softmax and uses cross entropy as loss function
- */
+
 class SoftmaxClassifier : public OutputLayer {
 private:
     Tensor<double> output_;

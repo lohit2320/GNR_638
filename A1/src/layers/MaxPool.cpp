@@ -58,7 +58,7 @@ Tensor<double>& MaxPool::forward(Tensor<double> &input) {
             }
         }
     }
-    // Return reference to the member variable
+    
     return this->output_;
 }
 

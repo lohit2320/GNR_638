@@ -1,7 +1,7 @@
 #include "FullyConnected.hpp"
 #include <random>
-#include <cmath>      // Required for sqrt
-#include <stdexcept>  // Required for std::runtime_error
+#include <cmath>      
+#include <stdexcept>  
 #include "../utilities/Tensor.hpp"
 
 FullyConnected::FullyConnected(int input_size, int output_size, int seed) {
