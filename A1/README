@@ -1,0 +1,19 @@
+## Requirements:
+- Python 3.12 or higher
+- Pybind11 `pip3 install pybind11`
+- Setuptools (for building the network) - `pip3 install setuptools`
+- Opencv-python (for image processing) - `pip3 install opencv-python`
+
+## Building the network:
+- `python3 setup.py build_ext --inplace`
+
+## Training:
+- `python3 train.py`
+- In the train.py file, give path to the training data
+- This will train the network and save the weights as 3 files in `weights/` directory.
+- In case of data_1 epochs = 6 is sufficient to get good results, but for data_2 you may need to increase the epochs to 30.
+
+## Evaluation:
+- `python3 test.py`
+- In the test.py file, give path to the test data and the weights directory.
+- This will load the weights and evaluate the network on the test data and print the results.
