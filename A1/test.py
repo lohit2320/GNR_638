@@ -4,13 +4,12 @@ import cv2
 import my_backend
 
 # ================= CONFIGURATION =================
-DATASET_PATH = "dataset/data_2"
-WEIGHTS_DIR = "weights"
+DATASET_PATH = "testdata"  # give path to test data (which has depth = 1 subdirectories)
+WEIGHTS_DIR = "weights" # give path to the weights directory saved by train.py
 BATCH_SIZE = 32 
 IMAGE_SIZE = 32
 CHANNELS = 3
-NUM_CLASSES = 10
-TRAIN_SPLIT = 0.8
+TRAIN_SPLIT = 0
 # =================================================
 
 def load_weights(conv1, conv2, fc):
@@ -32,25 +31,28 @@ def load_weights(conv1, conv2, fc):
 class TestLoader:
     def __init__(self, data_dir, batch_size):
         self.batch_size = batch_size
+        
+        if not os.path.exists(data_dir):
+            raise FileNotFoundError(f"Dataset not found at {data_dir}")
+
         self.classes = sorted([d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))])
+        self.num_classes = len(self.classes)
         self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
         
         self.samples = []
         for cls_name in self.classes:
             cls_dir = os.path.join(data_dir, cls_name)
             files = sorted([f for f in os.listdir(cls_dir) if f.lower().endswith(('.png', '.jpg'))])
-            
-            # Skip the training files
             idx = int(len(files) * TRAIN_SPLIT)
-            selected = files[idx:] # Take the last 20%
+            selected = files[idx:] 
             
             for f in selected:
                 self.samples.append((os.path.join(cls_dir, f), self.class_to_idx[cls_name]))
         
+        print(f"[TEST] Found {self.num_classes} classes.")
         print(f"[TEST] Loaded {len(self.samples)} images.")
 
     def get_batch(self):
-        # No shuffling needed for testing usually, but fine if you do
         for i in range(0, len(self.samples), self.batch_size):
             batch = self.samples[i : i + self.batch_size]
             flat_pixels = []
@@ -61,10 +63,11 @@ class TestLoader:
                 img = cv2.imread(path)
                 if img is None: continue
                 img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
-                for c in range(CHANNELS):
-                    for h in range(IMAGE_SIZE):
-                        for w in range(IMAGE_SIZE):
-                            flat_pixels.append(float(img[h, w, c] / 255.0))
+                
+               
+                img = img.transpose(2, 0, 1) 
+                flat_pixels.extend((img / 255.0).flatten().tolist())
+                
                 labels.append(label)
                 valid_batch_size += 1
             
@@ -79,7 +82,16 @@ def get_argmax(flat_probs, num_classes):
     return preds
 
 def main():
-    # 1. Initialize (Must match train.py exactly)
+    if not os.path.exists(DATASET_PATH):
+        print(f"Error: Dataset path '{DATASET_PATH}' does not exist.")
+        return
+
+    
+    test_loader = TestLoader(DATASET_PATH, BATCH_SIZE)
+    NUM_CLASSES = test_loader.num_classes
+    
+    print(f"\n>>> Initializing C++ Model for {NUM_CLASSES} classes...")
+
     conv1 = my_backend.Conv2d(3, 6, 5, 1, 0, 0)
     relu1 = my_backend.ReLU()
     pool1 = my_backend.MaxPool(2, 2)
@@ -91,12 +103,10 @@ def main():
     fc = my_backend.FullyConnected(576, NUM_CLASSES, 0)
     loss_fn = my_backend.SoftmaxClassifier()
 
-    # 2. Load Weights
     if not load_weights(conv1, conv2, fc):
         return
 
-    # 3. Test Loop
-    test_loader = TestLoader(DATASET_PATH, BATCH_SIZE)
+    # Evaluation
     correct = 0
     total = 0
     
@@ -106,7 +116,7 @@ def main():
     for flat_pixels, labels, bs in test_loader.get_batch():
         t_in = my_backend.Tensor(flat_pixels, [bs, CHANNELS, IMAGE_SIZE, IMAGE_SIZE])
         
-        # Forward only
+        # Forward 
         x = conv1.forward(t_in)
         x = relu1.forward(x)
         x = pool1.forward(x)

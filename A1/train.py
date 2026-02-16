@@ -2,19 +2,17 @@ import os
 import time
 import random
 import cv2
-import numpy as np # Required for the optimized block
-import my_backend  # Your compiled C++ module
+import my_backend  
 
 # ================= CONFIGURATION =================
-DATASET_PATH = "dataset/data_2" 
-WEIGHTS_DIR = "weights"
+DATASET_PATH = "dataset/data_2"    # give path of data_set to train (data_1 && data_2) (depth =1 subdirectories)
+WEIGHTS_DIR = "weights"   
 BATCH_SIZE = 32
-EPOCHS = 30
+EPOCHS = 1
 LEARNING_RATE = 0.005
-TRAIN_SPLIT = 0.8
+TRAIN_SPLIT = 1
 IMAGE_SIZE = 32
 CHANNELS = 3
-# NUM_CLASSES is now determined dynamically in main()
 # =================================================
 
 def save_weights(conv1, conv2, fc):
@@ -33,10 +31,6 @@ class DataLoader:
     def __init__(self, data_dir, batch_size, split='train'):
         self.batch_size = batch_size
         
-        # 1. Start Timer
-        start_load = time.time()
-        
-        # 2. Detect Classes (Subdirectories)
         if not os.path.exists(data_dir):
             raise FileNotFoundError(f"Directory {data_dir} not found.")
             
@@ -51,21 +45,19 @@ class DataLoader:
             random.seed(42) 
             random.shuffle(files)
             
-            # 80/20 Split
             idx = int(len(files) * TRAIN_SPLIT)
             selected = files[:idx] if split == 'train' else files[idx:]
             
             for f in selected:
-                self.samples.append((os.path.join(cls_dir, f), self.class_to_idx[cls_name]))
-        
-        # 3. Stop Timer
-        end_load = time.time()
-        self.loading_time = end_load - start_load
+                self.samples.append((os.path.join(cls_dir, f), self.class_to_idx[cls_name]))        
         
         print(f"[{split.upper()}] Found {self.num_classes} classes: {self.classes}")
-        print(f"[{split.upper()}] Loaded {len(self.samples)} images in {self.loading_time:.4f} seconds.")
 
-    def get_batch(self):
+
+    def get_batch(self,measure_time=False):
+
+        total_disk_time = 0
+        total_batches = 0
         random.shuffle(self.samples)
         for i in range(0, len(self.samples), self.batch_size):
             batch = self.samples[i : i + self.batch_size]
@@ -74,30 +66,27 @@ class DataLoader:
             flat_pixels = []
             labels = []
             valid_batch_size = 0
-            
             for path, label in batch:
+                start_disk = time.perf_counter()
                 img = cv2.imread(path)
+                end_disk = time.perf_counter()
+                total_disk_time += (end_disk - start_disk)
                 if img is None: continue
                 img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
-                
-                # --- OPTIMIZED PREPROCESSING (Numpy) ---
-                # 1. Transpose (H, W, C) -> (C, H, W)
                 img = img.transpose(2, 0, 1)
-                
-                # 2. Normalize and flatten
-                # flatten() produces a 1D array, tolist() makes it Python-compatible
                 flat_pixels.extend((img / 255.0).flatten().tolist())
-                # ---------------------------------------
-                
                 labels.append(label)
                 valid_batch_size += 1
             
             if valid_batch_size > 0:
+                total_batches += 1
                 yield flat_pixels, labels, valid_batch_size
+            
+        if measure_time:
+            print(f"Total Disk Read Time: {total_disk_time:.4f} sec")
 
 def get_argmax(flat_probs, num_classes):
     preds = []
-    # flat_probs is a 1D list of [batch * num_classes]
     for i in range(0, len(flat_probs), num_classes):
         chunk = flat_probs[i : i + num_classes]
         preds.append(chunk.index(max(chunk)))
@@ -108,14 +97,12 @@ def main():
         print(f"Error: Dataset not found at {DATASET_PATH}")
         return
 
-    # 1. Initialize Loader FIRST to get num_classes
-    print(">>> Loading Data...")
     train_loader = DataLoader(DATASET_PATH, BATCH_SIZE, 'train')
     NUM_CLASSES = train_loader.num_classes
     
     print(f"\n>>> Initializing C++ Model (Classes: {NUM_CLASSES})...")
     
-    # 2. Architecture
+    #  Architecture
     conv1 = my_backend.Conv2d(3, 6, 5, 1, 0, 42) 
     relu1 = my_backend.ReLU()
     pool1 = my_backend.MaxPool(2, 2)
@@ -124,23 +111,39 @@ def main():
     relu2 = my_backend.ReLU()
     pool2 = my_backend.MaxPool(2, 2)
     
-    # FC: 576 input (16 * 6 * 6) -> NUM_CLASSES output
     fc = my_backend.FullyConnected(576, NUM_CLASSES, 44)
     loss_fn = my_backend.SoftmaxClassifier()
 
-    # 3. Training Loop
+    # Training Loop
+    print(f"\n>>> Measuring data loading time)")
+    total_tensor_time = 0
+
+    for flat_pixels, labels, bs in train_loader.get_batch(measure_time=True):
+        pass
+
+    for flat_pixels, labels, bs in train_loader.get_batch(measure_time=False):
+        # Measure tensor creation separately
+        start_tensor = time.perf_counter()
+        t = my_backend.Tensor(flat_pixels, [bs, CHANNELS, IMAGE_SIZE, IMAGE_SIZE])
+        end_tensor = time.perf_counter()
+
+        total_tensor_time += (end_tensor - start_tensor)
+
+
+    print(f"Total Tensor Conversion Time: {total_tensor_time:.4f} sec")
+    
+
     print(f"\n>>> Starting Training ({EPOCHS} Epochs)")
     for epoch in range(EPOCHS):
         start_time = time.time()
         total_loss = 0
         correct = 0
         total_samples = 0
-        
-        for flat_pixels, labels, bs in train_loader.get_batch():
-            # Create C++ Tensor
+
+        for flat_pixels,labels, bs in train_loader.get_batch():
+
+            # Forward
             t_in = my_backend.Tensor(flat_pixels, [bs, CHANNELS, IMAGE_SIZE, IMAGE_SIZE])
-            
-            # --- Forward ---
             x = conv1.forward(t_in)
             x = relu1.forward(x)
             x = pool1.forward(x)
@@ -151,11 +154,11 @@ def main():
             
             x = fc.forward(x)
             
-            # --- Loss & Backprop ---
+            # Loss & Backprop
             probs = loss_fn.predict(x)
             loss, grad = loss_fn.backprop(labels)
             
-            # --- Backward ---
+            # Backward
             grad = fc.backprop(grad, LEARNING_RATE)
             grad = pool2.backprop(grad, LEARNING_RATE)
             grad = relu2.backprop(grad, LEARNING_RATE)
@@ -164,7 +167,7 @@ def main():
             grad = relu1.backprop(grad, LEARNING_RATE)
             grad = conv1.backprop(grad, LEARNING_RATE)
             
-            # --- Metrics ---
+            # Metrics
             total_loss += loss
             predictions = get_argmax(probs.to_list(), NUM_CLASSES)
             for p, g in zip(predictions, labels):
@@ -176,7 +179,7 @@ def main():
         epoch_acc = (correct / total_samples) * 100
         print(f"\nEpoch {epoch+1} Done | Avg Loss: {total_loss/total_samples:.4f} | Acc: {epoch_acc:.2f}% | Time: {time.time()-start_time:.1f}s")
 
-    # 4. Save
+    # Save
     save_weights(conv1, conv2, fc)
 
 if __name__ == "__main__":
