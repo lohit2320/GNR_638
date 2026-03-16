@@ -9,7 +9,6 @@ with open('finetune_results.json', 'r') as f:
 MODELS = list(results.keys())
 STRATEGIES = list(results[MODELS[0]].keys())
 
-# --- Plot 1: Accuracy vs Percentage of Unfrozen Parameters ---
 def plot_acc_vs_unfrozen():
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
     fig.suptitle('Validation Accuracy vs Percentage of Unfrozen Parameters')
@@ -17,10 +16,7 @@ def plot_acc_vs_unfrozen():
     for idx, model_name in enumerate(MODELS):
         unfrozen_pcts = [results[model_name][s]['percent_unfrozen'] for s in STRATEGIES]
         
-        # CHANGED: Use max() to get the best accuracy achieved during training
         val_accs = [max(results[model_name][s]['val_acc']) for s in STRATEGIES] 
-        
-        # Sort by percentage for a clean line plot
         sorted_indices = np.argsort(unfrozen_pcts)
         unfrozen_pcts = np.array(unfrozen_pcts)[sorted_indices]
         val_accs = np.array(val_accs)[sorted_indices]
@@ -28,13 +24,12 @@ def plot_acc_vs_unfrozen():
         
         axes[idx].plot(unfrozen_pcts, val_accs, marker='o', linestyle='-', linewidth=2)
         for i, txt in enumerate(sorted_strategies):
-            # Annotate with the strategy name
             axes[idx].annotate(txt, (unfrozen_pcts[i], val_accs[i]), 
                             textcoords="offset points", xytext=(0,10), ha='center')
         
         axes[idx].set_title(model_name)
         axes[idx].set_xlabel('% Unfrozen Parameters')
-        axes[idx].set_ylabel('Max Validation Accuracy (%)') # Updated label
+        axes[idx].set_ylabel('Max Validation Accuracy (%)')
         axes[idx].grid(True, linestyle='--', alpha=0.7)
         
     plt.tight_layout()
@@ -48,11 +43,8 @@ def plot_acc2_vs_unfrozen():
     
     for idx, model_name in enumerate(MODELS):
         unfrozen_pcts = [results[model_name][s]['percent_unfrozen'] for s in STRATEGIES]
-        
-        # CHANGED: Use max() to get the best accuracy achieved during training
         val_accs = [max(results[model_name][s]['train_acc']) for s in STRATEGIES] 
-        
-        # Sort by percentage for a clean line plot
+
         sorted_indices = np.argsort(unfrozen_pcts)
         unfrozen_pcts = np.array(unfrozen_pcts)[sorted_indices]
         val_accs = np.array(val_accs)[sorted_indices]
@@ -60,20 +52,18 @@ def plot_acc2_vs_unfrozen():
         
         axes[idx].plot(unfrozen_pcts, val_accs, marker='o', linestyle='-', linewidth=2)
         for i, txt in enumerate(sorted_strategies):
-            # Annotate with the strategy name
             axes[idx].annotate(txt, (unfrozen_pcts[i], val_accs[i]), 
                             textcoords="offset points", xytext=(0,10), ha='center')
             
         axes[idx].set_title(model_name)
         axes[idx].set_xlabel('% Unfrozen Parameters')
-        axes[idx].set_ylabel('Max training Accuracy (%)') # Updated label
+        axes[idx].set_ylabel('Max training Accuracy (%)') 
         axes[idx].grid(True, linestyle='--', alpha=0.7)
             
     plt.tight_layout()
     plt.savefig('trainacc_vs_unfrozen.png')
     plt.show()
 
-# --- Plot 2: Convergence Stability (Training Loss vs Epoch) ---
 def plot_convergence():
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
     fig.suptitle('Convergence Stability: Training Loss vs Epochs')
@@ -93,9 +83,7 @@ def plot_convergence():
     plt.savefig('convergence_stability.png')
     plt.show()
 
-# --- Plot 3: Gradient Norm Statistics Across Layers ---
 def plot_gradient_norms():
-    # Focusing on the 'full' fine-tuning strategy to see how gradients flow through the whole network
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
     fig.suptitle('Average Gradient Norms Across Network Layers (Full Fine-Tuning)')
     
@@ -103,7 +91,6 @@ def plot_gradient_norms():
         grad_data = results[model_name]['full']['grad_norms']
         
         layers = list(grad_data.keys())
-        # Calculate the mean gradient norm across all epochs for each layer block
         avg_norms = [np.mean(grad_data[layer]) for layer in layers]
         
         axes[idx].bar(layers, avg_norms, color='skyblue')
@@ -116,7 +103,6 @@ def plot_gradient_norms():
     plt.savefig('gradient_norms.png')
     plt.show()
 
-# Generate all plots
 plot_acc_vs_unfrozen()
 plot_acc2_vs_unfrozen()
 plot_convergence()

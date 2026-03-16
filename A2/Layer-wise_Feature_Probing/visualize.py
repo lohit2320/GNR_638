@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import numpy as np
 
-# Load the saved results
+
 results = torch.load('layer_probe_results.pt',weights_only=False)
 
 MODELS = list(results.keys())
@@ -47,7 +47,6 @@ def plot_feature_norms():
     plt.show()
 
 def plot_pca_visualizations():
-    # 3 models x 3 layers = 9 subplots
     fig, axes = plt.subplots(3, 3, figsize=(20, 18))
     fig.suptitle('PCA 2D Feature Projections Across Models and Depths', fontsize=16)
     
@@ -55,15 +54,10 @@ def plot_pca_visualizations():
         for col_idx, layer in enumerate(LAYERS):
             ax = axes[row_idx, col_idx]
             
-            # Retrieve data
             features = results[model_name][layer]['pca_features'].numpy()
             labels = results[model_name][layer]['pca_labels'].numpy()
-            
-            # Fit PCA
             pca = PCA(n_components=2)
             features_2d = pca.fit_transform(features)
-            
-            # Scatter plot, coloring by the 30 classes
             scatter = ax.scatter(features_2d[:, 0], features_2d[:, 1], c=labels, cmap='tab20', alpha=0.7, s=20)
             
             if col_idx == 0:
@@ -78,7 +72,6 @@ def plot_pca_visualizations():
     plt.savefig('pca_visualizations.png')
     plt.show()
 
-# Generate the plots
 plot_accuracy_vs_depth()
 plot_feature_norms()
 plot_pca_visualizations()
