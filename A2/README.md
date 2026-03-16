@@ -2,7 +2,7 @@
 
 Each task contains **two files**:
 
-1. **Main file with corresponding name ** – runs the experiment / training  and saves telemetry data.
+1. **Main file with corresponding name** – runs the experiment / training  and saves telemetry data.
 2. **Plot file with corresponding name** – generates the corresponding plots.
 
 
