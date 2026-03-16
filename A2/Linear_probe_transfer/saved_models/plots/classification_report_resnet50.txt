@@ -1,0 +1,36 @@
+                   precision    recall  f1-score   support
+
+          Airport       0.92      0.90      0.91        51
+         BareLand       0.92      0.87      0.90        54
+    BaseballField       0.89      0.76      0.82        21
+            Beach       0.93      0.93      0.93        58
+           Bridge       0.87      0.88      0.87        51
+           Center       0.74      0.57      0.65        35
+           Church       0.79      0.89      0.84        38
+       Commercial       0.83      0.93      0.88        57
+ DenseResidential       0.87      0.94      0.90        48
+           Desert       0.88      0.94      0.91        32
+         Farmland       0.95      0.98      0.96        55
+           Forest       1.00      0.91      0.95        32
+       Industrial       0.75      0.75      0.75        57
+           Meadow       0.93      0.93      0.93        42
+MediumResidential       0.83      0.88      0.85        33
+         Mountain       0.98      0.98      0.98        42
+             Park       0.72      0.75      0.73        59
+          Parking       0.94      0.98      0.96        45
+       Playground       0.82      0.83      0.83        60
+             Pond       0.79      0.77      0.78        60
+             Port       0.89      0.89      0.89        54
+   RailwayStation       0.74      0.76      0.75        34
+           Resort       0.62      0.57      0.59        42
+            River       0.84      0.85      0.84        54
+           School       0.70      0.70      0.70        47
+SparseResidential       0.90      0.97      0.94        38
+           Square       0.70      0.58      0.63        45
+          Stadium       0.74      0.74      0.74        46
+     StorageTanks       1.00      0.88      0.94        50
+          Viaduct       0.92      0.98      0.95        59
+
+         accuracy                           0.85      1399
+        macro avg       0.85      0.84      0.84      1399
+     weighted avg       0.85      0.85      0.85      1399

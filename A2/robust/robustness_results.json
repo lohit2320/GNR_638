@@ -1,0 +1,98 @@
+{
+    "resnet50": {
+        "Clean": {
+            "Accuracy": 95.2108649035025,
+            "CorruptionError": 0.04789135096497499,
+            "RelativeRobustness": 1.0
+        },
+        "Gauss_0.05": {
+            "Accuracy": 31.951393852751966,
+            "CorruptionError": 0.6804860614724804,
+            "RelativeRobustness": 0.3355855855855856
+        },
+        "Gauss_0.1": {
+            "Accuracy": 3.9313795568263044,
+            "CorruptionError": 0.9606862044317369,
+            "RelativeRobustness": 0.04129129129129129
+        },
+        "Gauss_0.2": {
+            "Accuracy": 3.9313795568263044,
+            "CorruptionError": 0.9606862044317369,
+            "RelativeRobustness": 0.04129129129129129
+        },
+        "MotionBlur": {
+            "Accuracy": 71.19370979270907,
+            "CorruptionError": 0.2880629020729093,
+            "RelativeRobustness": 0.7477477477477478
+        },
+        "Brightness": {
+            "Accuracy": 91.63688348820587,
+            "CorruptionError": 0.08363116511794133,
+            "RelativeRobustness": 0.9624624624624626
+        }
+    },
+    "densenet121": {
+        "Clean": {
+            "Accuracy": 94.7819871336669,
+            "CorruptionError": 0.052180128663330994,
+            "RelativeRobustness": 1.0
+        },
+        "Gauss_0.05": {
+            "Accuracy": 24.517512508934953,
+            "CorruptionError": 0.7548248749106505,
+            "RelativeRobustness": 0.25867269984917046
+        },
+        "Gauss_0.1": {
+            "Accuracy": 5.0750536097212295,
+            "CorruptionError": 0.9492494639027877,
+            "RelativeRobustness": 0.05354449472096531
+        },
+        "Gauss_0.2": {
+            "Accuracy": 3.5739814152966405,
+            "CorruptionError": 0.9642601858470335,
+            "RelativeRobustness": 0.03770739064856712
+        },
+        "MotionBlur": {
+            "Accuracy": 71.62258756254468,
+            "CorruptionError": 0.2837741243745532,
+            "RelativeRobustness": 0.7556561085972852
+        },
+        "Brightness": {
+            "Accuracy": 88.56325947105076,
+            "CorruptionError": 0.11436740528949241,
+            "RelativeRobustness": 0.9343891402714933
+        }
+    },
+    "efficientnet_b0": {
+        "Clean": {
+            "Accuracy": 93.63831308077198,
+            "CorruptionError": 0.06361686919228016,
+            "RelativeRobustness": 1.0
+        },
+        "Gauss_0.05": {
+            "Accuracy": 24.874910650464617,
+            "CorruptionError": 0.7512508934953538,
+            "RelativeRobustness": 0.26564885496183205
+        },
+        "Gauss_0.1": {
+            "Accuracy": 2.7877055039313796,
+            "CorruptionError": 0.9721229449606862,
+            "RelativeRobustness": 0.029770992366412216
+        },
+        "Gauss_0.2": {
+            "Accuracy": 1.858470335954253,
+            "CorruptionError": 0.9814152966404575,
+            "RelativeRobustness": 0.01984732824427481
+        },
+        "MotionBlur": {
+            "Accuracy": 63.90278770550393,
+            "CorruptionError": 0.3609721229449607,
+            "RelativeRobustness": 0.6824427480916031
+        },
+        "Brightness": {
+            "Accuracy": 88.56325947105076,
+            "CorruptionError": 0.11436740528949241,
+            "RelativeRobustness": 0.9458015267175574
+        }
+    }
+}

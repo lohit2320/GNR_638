@@ -1,8 +1,0 @@
-*.log
-.env
-dataset
-.vscode
-*__py
-testdata
-my_backend*
-build
