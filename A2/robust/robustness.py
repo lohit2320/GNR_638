@@ -14,6 +14,7 @@ import gc
 
 # --- Configuration ---
 DATA_DIR = '../data/train_data'
+NUM_CLASSES = 30
 BATCH_SIZE = 64
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 MODELS = ['resnet50', 'densenet121', 'efficientnet_b0']
@@ -72,7 +73,7 @@ def run_robustness_task():
         print(f"\n{'#'*60}\n# Starting Task 4.4 for {model_name}\n{'#'*60}")
         
         # model initialisation
-        model = timm.create_model(model_name, pretrained=True, num_classes=30).to(DEVICE)
+        model = timm.create_model(model_name, pretrained=True, num_classes=NUM_CLASSES).to(DEVICE)
         optimizer = optim.Adam(model.parameters(), lr=1e-4)
         criterion = nn.CrossEntropyLoss()
         

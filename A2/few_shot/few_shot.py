@@ -13,6 +13,7 @@ from ptflops import get_model_complexity_info
 
 # --- Configuration ---
 DATA_DIR = '../data/train_data'  # give data path 
+NUM_CLASSES = 30
 SAVE_DIR = 'few_shot_results'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
@@ -74,7 +75,7 @@ def train_one_scenario(model_name, ratio):
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4, pin_memory=True)
 
     # model initialisatin
-    model = timm.create_model(model_name, pretrained=True, num_classes=30).to(DEVICE)
+    model = timm.create_model(model_name, pretrained=True, num_classes=NUM_CLASSES).to(DEVICE)
     
     # Efficiency Metrics
     macs, params = get_model_complexity_info(model, (3, 224, 224), as_strings=True, 

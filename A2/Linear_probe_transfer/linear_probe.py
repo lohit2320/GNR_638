@@ -17,6 +17,7 @@ transform = transforms.Compose([
 
 # Load dataset
 data_dir = '../data/train_data' # give the path to dataset
+NUM_CLASSES = 30
 full_dataset = datasets.ImageFolder(root=data_dir, transform=transform)
 
 train_size = int(0.8 * len(full_dataset))
@@ -29,7 +30,7 @@ train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_worke
 val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=4,pin_memory=True)
 
 
-def setup_linear_probe(model_name, num_classes=30):
+def setup_linear_probe(model_name, num_classes=NUM_CLASSES):
     print(f"--- Setting up {model_name} for Linear Probing ---")
     
     model = timm.create_model(model_name, pretrained=True)
@@ -137,7 +138,7 @@ for model_name in models_to_test:
     print(f"\n{'='*60}")
     print(f"Model: {model_name}")
     print(f"{'='*60}")
-    model = setup_linear_probe(model_name, num_classes=30)
+    model = setup_linear_probe(model_name, num_classes=NUM_CLASSES)
     train_losses, train_accs, val_accs = train_linear_probe(
         model, train_loader, val_loader,
         model_name=model_name,

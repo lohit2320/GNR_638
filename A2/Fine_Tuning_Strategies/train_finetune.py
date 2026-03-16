@@ -11,6 +11,7 @@ import time
 
 # --- Configuration ---
 DATA_DIR = '../data/train_data' #give path to dataset
+NUM_CLASSES = 30
 EPOCHS = 30
 BATCH_SIZE = 128
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -80,7 +81,7 @@ def run_experiments():
             print(f"Training {model_name} | Strategy: {strategy}")
             print(f"{'='*50}")
             
-            model = timm.create_model(model_name, pretrained=True, num_classes=30).to(DEVICE)
+            model = timm.create_model(model_name, pretrained=True, num_classes=NUM_CLASSES).to(DEVICE)
             percent_unfrozen = apply_finetuning_strategy(model, model_name, strategy)
             
             macs, params = get_model_complexity_info(model, (3, 224, 224), as_strings=True, print_per_layer_stat=False, verbose=False)

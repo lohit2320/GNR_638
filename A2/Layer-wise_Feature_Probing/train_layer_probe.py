@@ -10,6 +10,7 @@ import time
 
 # --- Configuration ---
 DATA_DIR = '../data/train_data' #give path to dataset
+NUM_CLASSES = 30
 EPOCHS = 30 
 BATCH_SIZE = 128
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -18,7 +19,7 @@ MODELS = ['resnet50', 'densenet121', 'efficientnet_b0']
 LAYER_INDICES = [0, 2, 4] 
 LAYER_NAMES = ['Early', 'Middle', 'Final']
 
-def get_pca_fixed_subset(dataset, samples_per_class=30, num_classes=30):
+def get_pca_fixed_subset(dataset, samples_per_class=30, num_classes=NUM_CLASSES):
     """Creates a fixed subset with exactly 30 samples per class."""
     class_counts = {i: 0 for i in range(num_classes)}
     subset_indices = []
